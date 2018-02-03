@@ -1,12 +1,16 @@
+let g_video;
 const createMedia = async (src) => {
   try{
     return await createImage(src);
   }
   catch(e){
-    const video = document.createElement('video');
-    video.crossOrigin = "";
-    video.src = src;  
-    return video;
+    g_video = document.createElement('video');
+    g_video.crossOrigin = "";
+    g_video.src = src;  
+    g_video.autoplay = true;
+    g_video.muted = true;
+    g_video.loop = true;
+    return g_video;
   }
 };
 
