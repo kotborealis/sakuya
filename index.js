@@ -1,3 +1,26 @@
+const createMedia = async (src) => {
+  try{
+    return await createImage(src);
+  }
+  catch(e){
+    const video = document.createElement('video');
+    video.crossOrigin = "";
+    video.src = src;  
+    return video;
+  }
+};
+
+const createImage = async (src) => new Promise((resolve, reject) => {
+  const image = new Image;
+  image.crossOrigin = "";
+  image.onload = () => {
+    resolve(image);
+  };
+  image.onerror = reject;
+  image.src = src;
+});
+
+
 (async () => {
   const vertexShader = `
   attribute vec3 position;
@@ -12,12 +35,7 @@
     width: 0,
     height: 0,
     textureWidth: 0,
-    textureHeight: 0,
-
-    animated_texture: false,
-    videoPlaying: false,
-    videoTimeUpdate: false,
-    textureReady: false
+    textureHeight: 0
   };
 
   const checkTextureReady = (video) => {
@@ -26,14 +44,14 @@
     }
   };
 
-  const updateTextureVideo = (gl, texture, video) => {
+  const updateTexture = (gl, texture, image) => {
       const level = 0;
       const internalFormat = gl.RGBA;
       const srcFormat = gl.RGBA;
       const srcType = gl.UNSIGNED_BYTE;
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                    srcFormat, srcType, video);
+                    srcFormat, srcType, image);
     };
 
   const uniformLocation = {
@@ -107,30 +125,21 @@
     }
   };
 
-  const createTexture = (image = null) => {
+  const createTexture = () => {
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    if(image){
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-      params.textureWidth = image.width;
-      params.textureHeight = image.height;
-    }
-    else{
-      const level = 0;
-      const internalFormat = gl.RGBA;
-      const width = 1;
-      const height = 1;
-      const border = 0;
-      const srcFormat = gl.RGBA;
-      const srcType = gl.UNSIGNED_BYTE;
-      const pixel = new Uint8Array([0, 0, 255, 255]);
-      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                    width, height, border, srcFormat, srcType,
-                    pixel);
-
-      params.animated_texture = true;
-    }
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const width = 1;
+    const height = 1;
+    const border = 0;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 255, 255]);
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                  width, height, border, srcFormat, srcType,
+                  pixel);
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST)
@@ -138,38 +147,9 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-    if(image){
-      gl.generateMipmap(gl.TEXTURE_2D);
-    }
-
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     return texture;
-  };
-
-  const loadTextureImage = async (image) => new Promise((resolve, reject) => {
-    image.onload = () => {
-      resolve(createTexture(image));   
-    };
-  });
-
-  const loadTextureVideo = (video) => {
-    video.addEventListener('playing', () => {
-      params.videoPlaying = true;
-      checkTextureReady(video);
-    });
-    video.addEventListener('timeupdate', () => {
-      params.videoTimeUpdate = true;
-      checkTextureReady(video);
-    });
-    checkTextureReady(video);
-    return createTexture();
-  }
-
-  const generateShaderUniformLocation = (uniformLocation, program) => {
-    Object.keys(uniformLocation).map(name => 
-      uniformLocation[name] = gl.getUniformLocation(program, name)
-    );
   };
 
   const vertexBuffer = gl.createBuffer();
@@ -183,19 +163,27 @@
   let shader, texture, textureSrc;
 
   const init = async () => {
-    const fragmentShader = document.getElementById('fs').textContent;
+    console.log("init");
+    const program = document.getElementById('fs').value;
+    const fragmentShader = program.split('\n').slice(1).join('\n');
+    const src = program.split('\n')[0].slice(1)
+    console.log(src);
+    console.log(fragmentShader);
+
     shader = createProgram(vertexShader, fragmentShader);
-    textureSrc = document.getElementById("texture");
-    texture = await loadTexture(textureSrc);
-    
-    generateShaderUniformLocation(uniformLocation, shader);
 
+    textureSrc = await createMedia(src);
+    texture = createTexture();
+    console.log("initend");
     params.startTime = Date.now();
-  };
 
+    history.replaceState(undefined, undefined, "#" + program)
+  };
   await init();
 
-  document.onkeypress = init;
+  document.getElementById('fs').onkeydown = init;
+  document.getElementById('fs').onkeypress = init;
+  document.getElementById('fs').onkeyup = init;
 
   const render = () => {
     params.time = Date.now() - params.startTime;
@@ -203,9 +191,9 @@
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(shader);
 
-    gl.uniform1f(uniformLocation.time, params.time / 1000);
-    gl.uniform2f(uniformLocation.resolution, params.width, params.height);
-    gl.uniform2f(uniformLocation.textureSize, params.textureWidth, params.textureHeight);
+    gl.uniform1f(gl.getUniformLocation(shader, 'time'), params.time / 1000);
+    gl.uniform2f(gl.getUniformLocation(shader, 'resolution'), params.width, params.height);
+    gl.uniform2f(gl.getUniformLocation(shader, 'textureSize'), params.textureWidth, params.textureHeight);
 
     let vertex_position;
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
@@ -214,7 +202,7 @@
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(uniformLocation.texture, 0);
+    gl.uniform1i(gl.getUniformLocation(shader, 'texture'), 0);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.disableVertexAttribArray(vertex_position);
@@ -222,9 +210,7 @@
 
   const loop = () => {
     handleResize();
-    if(params.animated_texture){
-      updateTextureVideo(gl, texture, textureSrc);
-    }
+    updateTexture(gl, texture, textureSrc);
     render();
     requestAnimationFrame(loop);
   };

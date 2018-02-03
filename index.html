@@ -4,8 +4,40 @@
 </head>
 <body>
 
-<!-- <img id="texture" src="https://nazrin.awooo.ru/_/7bb38fc6d4c34e954a65cbe3c813f8dc.png" crossorigin=""/> -->
-<video src="https://nazrin.awooo.ru/_/9b2b8aba7b430d7f292e5859b0b83e2d.mp4" id="texture" crossorigin=""></video>
+<img id="texture" src="<!-- https://nazrin.awooo.ru/_/7bb38fc6d4c34e954a65cbe3c813f8dc.png -->" crossorigin=""/>
+<!-- <video src="https://nazrin.awooo.ru/_/9b2b8aba7b430d7f292e5859b0b83e2d.mp4" id="texture" crossorigin=""></video> -->
+
+<textarea id="fs">
+#https://nazrin.awooo.ru/_/7bb38fc6d4c34e954a65cbe3c813f8dc.png
+
+uniform float time;
+uniform vec2 resolution;
+uniform vec2 textureSize;
+
+uniform sampler2D texture;
+
+void main(void){
+
+vec2 uv = gl_FragCoord.xy / resolution.xy;
+float pi = 3.1415926535;
+vec2 origUv = uv;
+uv.x = 0. + (uv.x - 0.5) * (1.0 + uv.y * 2.0);
+uv.y = 0. + (origUv.y - 0.5) * (1.0 + abs(origUv.x - 0.5) * 1.0);
+uv.x *= 8.0 + cos(time);
+uv.y *= 4.50;
+uv.x += cos(time * 0.5);
+uv.y -= sin(time * 1.25 + abs(uv.x + time) * 0.2);
+float power = (0.05 + abs(0.5 - uv.x) * 0.01);
+float magic = cos(uv.x * pi * 4.0 + time * 0.5) * sin(uv.y * pi * 3.5 - time * 0.5);
+uv += power * magic;
+uv = mix(mod(uv, vec2(1.0)), uv, smoothstep(1.5, 2.5, length(uv)));
+uv = vec2(uv.x, 1.0 - uv.y);
+
+vec4 col = texture2D(texture, uv);
+gl_FragColor = vec4(col);
+
+}
+</textarea>
 
 <script id="fs" type="x-shader/fragment"> 
   uniform float time;
@@ -15,24 +47,24 @@
   uniform sampler2D texture;
 
   void main(void){
-  vec2 uv = gl_FragCoord.xy / resolution.xy;
-  float pi = 3.1415926535;
-  vec2 origUv = uv;
-  uv.x = 0. + (uv.x - 0.5) * (1.0 + uv.y * 2.0);
-  uv.y = 0. + (origUv.y - 0.5) * (1.0 + abs(origUv.x - 0.5) * 1.0);
-  uv.x *= 8.0 + cos(time);
-  uv.y *= 4.50;
-  uv.x += cos(time * 0.5);
-  uv.y -= sin(time * 1.25 + abs(uv.x + time) * 0.2);
-  float power = (0.05 + abs(0.5 - uv.x) * 0.01);
-  float magic = cos(uv.x * pi * 4.0 + time * 0.5) * sin(uv.y * pi * 3.5 - time * 0.5);
-  uv += power * magic;
-  uv = mix(mod(uv, vec2(1.0)), uv, smoothstep(1.5, 2.5, length(uv)));
-  uv = vec2(uv.x, 1.0 - uv.y);
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    float pi = 3.1415926535;
+    vec2 origUv = uv;
+    uv.x = 0. + (uv.x - 0.5) * (1.0 + uv.y * 2.0);
+    uv.y = 0. + (origUv.y - 0.5) * (1.0 + abs(origUv.x - 0.5) * 1.0);
+    uv.x *= 8.0 + cos(time);
+    uv.y *= 4.50;
+    uv.x += cos(time * 0.5);
+    uv.y -= sin(time * 1.25 + abs(uv.x + time) * 0.2);
+    float power = (0.05 + abs(0.5 - uv.x) * 0.01);
+    float magic = cos(uv.x * pi * 4.0 + time * 0.5) * sin(uv.y * pi * 3.5 - time * 0.5);
+    uv += power * magic;
+    uv = mix(mod(uv, vec2(1.0)), uv, smoothstep(1.5, 2.5, length(uv)));
+    uv = vec2(uv.x, 1.0 - uv.y);
 
-  vec4 col = texture2D(texture, uv);
-  gl_FragColor = vec4(col);
-}
+    vec4 col = texture2D(texture, uv);
+    gl_FragColor = vec4(col);
+  }
 </script>
 
 <script src="./index.js"></script>
