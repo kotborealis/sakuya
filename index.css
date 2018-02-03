@@ -28,4 +28,10 @@ textarea{
     background: #0f0f0f;
     color: #f0f0f0;
     border: 0;
+
+    height: 100%;
+    min-height: 100%;
+
+    min-width: 50px;
+    max-width: 90vw;
 }
