@@ -24,7 +24,7 @@ img {
   bottom: 0;
   width: 16px;
   height: 16px;
-  opacity: 0.01;
+  opacity: 1;
 }
 
 textarea{
