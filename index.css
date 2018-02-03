@@ -22,4 +22,6 @@ textarea{
     overflow: auto;
     background: black;
     color: white;
+    height: 100%;
+    width: 500px;
 }
