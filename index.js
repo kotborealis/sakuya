@@ -11,6 +11,7 @@ domElementVideo.loop = true;
 
 const domElementImage = new Image;
 domElementImage.crossOrigin = "";
+document.body.appendChild(domElementImage);
 
 
 // Functions to init video/image
