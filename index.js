@@ -27,7 +27,8 @@ const initImage = (src) => new Promise((resolve, reject) => {
 });
 
 const initVideo = (src) => {
-  domElementVideo.src = src;
+  if(domElementVideo.src !== src) 
+    domElementVideo.src = src;
   state.textureSource = domElementVideo;
 }
 
